@@ -1,72 +1,216 @@
 # 🛡️ Family Shield for Stremio
 
 <p align="center">
-  <img src="https://raw.githubusercontent.com/shakyasaurabh/stremio-family-shield/e07f59e49df3dd0d00ca138e6c1304d60d6625f2/extension.jpeg" alt="Family Shield Extension" width="700"/>
+  <img src="./extension2.jpeg" alt="Family Shield Extension" width="700">
 </p>
 
-A lightweight, serverless Stremio add-on that injects age ratings, parental advisories, and content warnings directly into your stream list. 
-
-When you use Stremio on a family TV, it isn't always obvious if a movie contains heavy violence, nudity, or adult language before someone clicks "Play." **Family Shield** solves this by adding a highly visible, color-coded informational tile right above your regular streams.
+<p align="center">
+  <strong>Age Ratings, Content Warnings, and Family-Friendly Guidance directly inside Stremio.</strong>
+</p>
 
 ---
 
-## 📸 See It In Action
+## 📖 Overview
 
-Family Shield dynamically fetches metadata and adapts its warnings based on the content you click:
+When using Stremio on a shared family TV, it's often difficult to know whether a movie contains mature content before someone presses **Play**.
 
-| 🟢 Family Friendly | 🟡 Parents Cautioned (Teen) | 🔴 Restricted (Adult) |
-| :---: | :---: | :---: |
-| <img src="https://raw.githubusercontent.com/shakyasaurabh/stremio-family-shield/e07f59e49df3dd0d00ca138e6c1304d60d6625f2/finding_nemo.jpeg" alt="Finding Nemo Family Friendly" width="280"/> | <img src="https://raw.githubusercontent.com/shakyasaurabh/stremio-family-shield/e07f59e49df3dd0d00ca138e6c1304d60d6625f2/knives_out.jpeg" alt="Knives Out PG 13" width="280"/> | <img src="https://raw.githubusercontent.com/shakyasaurabh/stremio-family-shield/e07f59e49df3dd0d00ca138e6c1304d60d6625f2/blue_is_the_warmest_colour.jpeg" alt="Blue is the Warmest Color NC-17" width="280"/> |
-| *Finding Nemo (Rated G)* | *Knives Out (Rated PG-13)* | *Blue Is the Warmest Colour (NC-17)* |
+**Family Shield** adds a highly visible informational stream tile above your normal stream providers, displaying:
+
+* Official age ratings (G, PG, PG-13, R, NC-17, etc.)
+* Family suitability indicators
+* Violence warnings
+* Sexual content warnings
+* Strong language warnings
+
+The add-on is completely serverless, lightweight, and requires no user configuration.
+
+---
+
+## 📸 Screenshots
+
+|              🟢 Family Friendly             |        🟡 Parents Cautioned (Teen)        |                   🔴 Restricted (Adult)                   |
+| :-----------------------------------------: | :---------------------------------------: | :-------------------------------------------------------: |
+| <img src="./finding_nemo.jpeg" width="280"> | <img src="./knives_out.jpeg" width="280"> | <img src="./blue_is_the_warmest_colour.jpeg" width="280"> |
+|              *Finding Nemo (G)*             |            *Knives Out (PG-13)*           |            *Blue Is the Warmest Colour (NC-17)*           |
 
 ---
 
 ## ✨ Features
 
-* **Instant Visibility:** Displays a clean Stream Tile with the maturity rating (G, PG-13, R, etc.) right before you click a stream.
-* **Content Profiling:** Scans TMDb keywords to warn about specific hazards (Violence, Nudity/Sexual Content, Strong Language).
-* **Zero Clutter:** Does NOT overwrite standard Cinemeta posters or descriptions, preventing library syncing and UI issues.
-* **Lightning Fast:** Hosted entirely on Cloudflare Workers with edge caching for ~10ms response times.
-* **100% Free:** No premium API keys (like RPDB) required from the user.
+### 🏷️ Age Ratings
+
+Displays official maturity ratings directly within the stream list:
+
+* G
+* PG
+* PG-13
+* R
+* NC-17
+* TV ratings (where available)
+
+### ⚠️ Content Warnings
+
+Analyzes metadata and content keywords to identify:
+
+* Violence
+* Sexual Content / Nudity
+* Strong Language
+* Adult Themes
+
+### 🎨 Easy-to-Understand Color Coding
+
+| Color     | Meaning                |
+| --------- | ---------------------- |
+| 🟢 Green  | Family Friendly        |
+| 🟡 Yellow | Parents Cautioned      |
+| 🔴 Red    | Mature / Adult Content |
+
+### 🚀 Fast & Lightweight
+
+* Hosted on Cloudflare Workers
+* Edge-cached responses
+* No database required
+* No premium services required
+
+### 🔒 Non-Intrusive
+
+Family Shield:
+
+✅ Adds an informational stream tile
+
+✅ Leaves Cinemeta untouched
+
+✅ Does not modify posters
+
+✅ Does not alter descriptions
+
+✅ Does not interfere with library syncing
 
 ---
 
-## 📥 How to Install
+## 📥 Installation
 
-### Method 1: One-Click Install (Recommended)
-Click the link below to automatically open Stremio and prompt the installation:
-**[👉 Install Family Shield](stremio://family-shield.saurabhshakya078.workers.dev/manifest.json)**
+Because GitHub blocks `stremio://` links, install manually:
 
-### Method 2: Manual Install
-1. Open Stremio.
-2. Go to the **Addons** tab (the puzzle piece icon).
-3. Paste the following URL into the search bar and click Install:
-   `https://family-shield.saurabhshakya078.workers.dev/manifest.json`
+### Step 1
 
-> **💡 Pro-Tip for sorting:** Stremio sorts stream providers by installation date. To make Family Shield appear at the *very top* of your links (above Torrentio, etc.), simply uninstall and reinstall your other add-ons so that Family Shield is the "oldest" one on your account!
+Open **Stremio**
 
----
+### Step 2
 
-## 🛠️ How It Works
+Navigate to:
 
-1. Stremio requests stream data for an IMDb ID.
-2. The Cloudflare Worker intercepts the request.
-3. It fetches the US Certification (Age Rating) and Content Keywords from the free TMDb API.
-4. It maps the data to a severity tier (🟢 Family, 🟡 Teen, 🔴 Adult) and formats an informational stream tile.
-5. Cloudflare edge-caches the response for 30 days to ensure zero API rate-limiting.
+**Add-ons → Community Add-ons**
 
----
+### Step 3
 
-## 💻 Self-Hosting
+Paste the following URL into the **Addon URL** field:
 
-Want to host this yourself? It requires zero server costs.
-1. Create a free [Cloudflare](https://dash.cloudflare.com) account.
-2. Create a new Worker and paste the code from `worker.js`.
-3. Create a free developer account on [TMDb](https://www.themoviedb.org/) and get an API Read Access Token.
-4. Add your TMDb token as a Cloudflare Secret variable named `TMDB_API_KEY`.
-5. Deploy and use your own `.workers.dev` URL!
+```text
+https://family-shield.saurabhshakya078.workers.dev/manifest.json
+```
+
+### Step 4
+
+Click **Install**
 
 ---
 
-## ⚖️ Disclaimer
-*This add-on is purely informational and relies on community-sourced data from TMDb. It does not block playback, hide streams, or guarantee 100% accuracy of content tags. Always review content independently if you have strict household viewing guidelines.*
+## 💡 Recommended Add-on Order
+
+Stremio sorts stream providers according to installation order.
+
+To place Family Shield above providers such as:
+
+* Torrentio
+* KnightCrawler
+* MediaFusion
+* Comet
+
+Install Family Shield first, or reinstall your stream provider add-ons afterward.
+
+This places the Family Shield warning tile at the top of the stream list.
+
+---
+
+## ⚙️ How It Works
+
+1. Stremio requests streams for an IMDb title.
+2. Family Shield receives the request.
+3. The add-on fetches:
+
+   * Certification data
+   * Content keywords
+4. Metadata is evaluated.
+5. A safety classification is generated.
+6. An informational stream tile is returned.
+7. Results are cached globally by Cloudflare.
+
+---
+
+## 🏗️ Self-Hosting
+
+You can deploy your own instance for free.
+
+### Requirements
+
+* Cloudflare Account
+* TMDb Developer Account
+* TMDb Read Access Token
+
+### Deployment
+
+1. Create a new Cloudflare Worker.
+2. Copy the contents of `worker.js`.
+3. Create a TMDb API token.
+4. Add a Worker Secret named:
+
+```text
+TMDB_API_KEY
+```
+
+5. Deploy the Worker.
+6. Use your own `workers.dev` URL.
+
+---
+
+## 🔧 Technology Stack
+
+* Cloudflare Workers
+* TMDb API
+* JavaScript
+* Stremio Add-on SDK
+
+---
+
+## ⚠️ Disclaimer
+
+Family Shield is an informational add-on only.
+
+It does **not**:
+
+* Block playback
+* Hide streams
+* Enforce parental controls
+* Guarantee content accuracy
+
+Ratings and content indicators rely on publicly available metadata and community-maintained information from TMDb.
+
+Parents and guardians should always make their own viewing decisions.
+
+---
+
+## ❤️ Support the Project
+
+If you find Family Shield useful:
+
+* ⭐ Star the repository
+* 🐞 Report issues
+* 💡 Suggest improvements
+* 🔀 Submit pull requests
+
+Every contribution helps make Stremio more family-friendly.
+
+---
+
+Made with ❤️ for families using Stremio.
