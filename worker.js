@@ -25,13 +25,22 @@ export default {
       if (parts.length >= 4) {
         const type = parts[2]; 
         const filename = parts[3]; 
-        const imdbId = filename.replace('.json', '');
+        const rawId = filename.replace('.json', '');
 
-        // Cloudflare Edge Caching
+        // Stremio sends series IDs as "tt1234567:season:episode" (e.g. tt1234567:1:5)
+        // but a plain "tt1234567.json" for movies. Some clients percent-encode the
+        // colon as %3A, so decode first, then strip any season/episode suffix.
+        const decodedId = decodeURIComponent(rawId);
+        const imdbId = decodedId.split(':')[0];
+
+        // Cloudflare Edge Cache — only ever populated with confirmed-good results
+        // (rating found OR confirmed "not listed on TMDB"). Transient failures
+        // (TMDB errors, rate limits, network issues) are never cached, so they
+        // retry fresh on the next request instead of getting stuck.
         const cacheKey = new Request(url.toString(), request);
         const cache = caches.default;
-        let response = await cache.match(cacheKey);
-        if (response) return response;
+        const cachedResponse = await cache.match(cacheKey);
+        if (cachedResponse) return cachedResponse;
 
         try {
           const tmdbAuth = `Bearer ${env.TMDB_API_KEY}`;
@@ -39,6 +48,13 @@ export default {
           // Step A: Exchange IMDb ID for TMDB ID
           const findUrl = `https://api.themoviedb.org/3/find/${imdbId}?external_source=imdb_id`;
           const findRes = await fetch(findUrl, { headers: { 'Authorization': tmdbAuth, 'Accept': 'application/json' } });
+          if (!findRes.ok) {
+            // TMDB API failure (rate limit, downtime, bad key, etc) — not a real
+            // "not listed" result. Return without caching so it retries fresh.
+            return new Response(JSON.stringify({ streams: [], error: `TMDB find failed: ${findRes.status}` }), {
+              headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' }
+            });
+          }
           const findData = await findRes.json();
 
           let tmdbId = null;
@@ -67,6 +83,13 @@ export default {
               fetch(keywordsUrl, { headers: { 'Authorization': tmdbAuth, 'Accept': 'application/json' } })
             ]);
 
+            if (!resRating.ok || !resKeywords.ok) {
+              // TMDB API failure on the detail calls — don't cache, retry next time.
+              return new Response(JSON.stringify({ streams: [], error: `TMDB detail fetch failed (rating: ${resRating.status}, keywords: ${resKeywords.status})` }), {
+                headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' }
+              });
+            }
+
             const dataRating = await resRating.json();
             const dataKeywords = await resKeywords.json();
 
@@ -76,7 +99,7 @@ export default {
               const certObj = usResult.release_dates.find(d => d.certification);
               if (certObj) rating = certObj.certification;
             } else if (type === 'series' && usResult) {
-              rating = usResult.rating;
+              rating = usResult.rating || 'Unknown';
             }
 
             // Parse Content Keywords
@@ -96,8 +119,13 @@ export default {
           }
 
           // Step C: Determine Hazard Tier Styling
-          const upperRating = rating.toUpperCase();
+          const upperRating = (rating || 'Unknown').toUpperCase();
           let summaryText = `Rated: ${rating}`;
+          if (!tmdbId) {
+            summaryText = `Rated: Unknown (no TMDB match for ${imdbId})`;
+          } else if (rating === 'Unknown') {
+            summaryText = `Rated: Unknown (no US ${type === 'movie' ? 'certification' : 'TV rating'} on TMDB)`;
+          }
           if (['G', 'TV-G', 'TV-Y', 'TV-Y7', 'PG', 'TV-PG'].includes(upperRating)) {
             colorEmoji = '🟢';
             summaryText += ' | Family Friendly';
@@ -132,16 +160,20 @@ export default {
             headers: {
               'Content-Type': 'application/json',
               'Access-Control-Allow-Origin': '*',
-              'Cache-Control': 'public, max-age=2592000' 
+              'Cache-Control': 'public, max-age=604800'
             }
           });
 
+          // Cache this — we only reach here on a confirmed outcome:
+          // either a real rating was found, or TMDB was successfully queried
+          // and genuinely has no match / no US rating for this title.
           ctx.waitUntil(cache.put(cacheKey, finalResponse.clone()));
+
           return finalResponse;
 
         } catch (err) {
-          return new Response(JSON.stringify({ streams: [] }), {
-            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*' }
+          return new Response(JSON.stringify({ streams: [], error: err.message }), {
+            headers: { 'Content-Type': 'application/json', 'Access-Control-Allow-Origin': '*', 'Cache-Control': 'no-store' }
           });
         }
       }
